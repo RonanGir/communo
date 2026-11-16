@@ -50,3 +50,6 @@ out/
 ._*
 Thumbs.db
 desktop.ini
+
+# IA
+.claude
