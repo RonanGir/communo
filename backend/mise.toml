@@ -1,11 +1,6 @@
 [tools]
 java = "temurin-25"
 
-[env]
-DATABASE_PWD = { required = true }
-DATABASE_URL = { required = true }
-DATABASE_USER = { required = true }
-
 [tasks.build]
 alias = "build"
 run = "./mvnw clean install -DskipTests=true"
