@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: communo-backend
+  datasource:
+    driver-class-name: "org.postgresql.Driver"
+    password: ${DATABASE_PWD}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USER}
