@@ -11,22 +11,51 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: ./backend
-
 jobs:
   build:
+    name: build (${{ matrix.project }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [ backend, frontend ]
+    defaults:
+      run:
+        working-directory: ./${{ matrix.project }}
     steps:
       - uses: actions/checkout@v7
+      - if: matrix.project == 'frontend'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: npm-
       - uses: jdx/mise-action@v5
+        with:
+          working_directory: ./${{ matrix.project }}
       - run: mise run build
+
   test:
+    name: test (${{ matrix.project }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [ backend, frontend ]
+    defaults:
+      run:
+        working-directory: ./${{ matrix.project }}
     steps:
       - uses: actions/checkout@v7
+      - if: matrix.project == 'frontend'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: npm-
       - uses: jdx/mise-action@v5
+        with:
+          working_directory: ./${{ matrix.project }}
       - run: mise run test:unit-test
