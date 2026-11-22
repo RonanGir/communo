@@ -35,3 +35,5 @@ build/
 # Mise-en-place
 mise.local.toml
 .mvn*
+
+.env.dev

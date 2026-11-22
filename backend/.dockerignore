@@ -1,0 +1,9 @@
+target/
+.git
+backend.iml
+HELP.md
+mise.*.toml
+mise.toml
+.env.*
+.env.dev
+!.env.example
