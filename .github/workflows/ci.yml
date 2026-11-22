@@ -59,3 +59,28 @@ jobs:
         with:
           working_directory: ./${{ matrix.project }}
       - run: mise run test:unit-test
+
+  deploy:
+    name: deploy (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [ build, test ]
+    #if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main'
+    environment: Communo_production
+    strategy:
+      matrix:
+        project: [ backend, frontend ]
+        include:
+            - project: backend
+              hook: RENDER_DEPLOY_API_COMMUNO_HOOK
+            - project: frontend
+              hook: RENDER_DEPLOY_UI_COMMUNO_HOOK
+    steps:
+      - name: Déclencher le déploiement Render
+        env:
+          # Le secret passe par une variable d'env : jamais interpolé dans la commande.
+          HOOK_URL: ${{ secrets[matrix.hook] }}
+        # --fail : curl sort en erreur si Render répond 4xx/5xx
+        # --silent --show-error : pas de bruit, mais l'erreur reste visible
+        run: curl --fail --silent --show-error -X POST "$HOOK_URL"
