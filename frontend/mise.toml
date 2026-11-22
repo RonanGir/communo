@@ -1,0 +1,17 @@
+[tools]
+node = "26.13.1"
+
+[tasks.install]
+run = "npm ci"
+sources = ["package-lock.json"]
+outputs = ["node_modules/.package-lock.json"]
+
+[tasks.build]
+alias = "build"
+depends = ["install"]
+run = "npm run build"
+
+[tasks."test:unit-test"]
+alias = "unit-test"
+depends = ["install", "build"]
+run = "npm run test"
