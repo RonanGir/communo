@@ -30,14 +30,6 @@ jobs:
         with:
           working_directory: ./frontend
       - run: mise run build
-      # Le résultat du build est transmis au job package (les jobs ne partagent pas de disque).
-      # Chemin par défaut Angular : dist/<nom du projet>/browser (à vérifier au premier run).
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-browser
-          path: frontend/dist/frontend/browser
-          if-no-files-found: error
-          retention-days: 1
       - run: mise run test:unit-test
 
   backend-test:
@@ -52,52 +44,39 @@ jobs:
       - uses: jdx/mise-action@v5
         with:
           working_directory: ./backend
-      # Sans le front : les tests n'ont pas besoin de static/
       - run: mise run test:unit-test
 
-  package:
-    name: backend (package avec front)
+  docker-build:
+    name: docker (dry-run build)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [ frontend, backend-test ]
-    defaults:
-      run:
-        working-directory: ./backend
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
-          working_directory: ./backend
-      # Vide static/ : download-artifact n'efface rien, les anciens fichiers à hash resteraient dans le jar
-      - name: Vider static/
-        run: rm -rf src/main/resources/static && mkdir -p src/main/resources/static
-      # Copie du front dans static/ AVANT le package Maven, sinon le jar ne l'embarque pas.
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-browser
-          path: backend/src/main/resources/static
-      # Tâche mise "build" = ./mvnw clean install -DskipTests (tests déjà joués par backend-test)
-      - run: mise run build
+          context: .
+          # Adapte le chemin si ton Dockerfile est à la racine (./Dockerfile)
+          file: ./backend/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     name: deploy (${{ matrix.project }})
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [ package ]
-    #if: startsWith(github.ref, 'refs/tags/')
+    needs: [ frontend, backend-test, docker-build ]
     if: github.ref == 'refs/heads/main'
     environment: Communo_production
     strategy:
       matrix:
         project: [ backend ]
         include:
-            - project: backend
-              hook: RENDER_DEPLOY_API_COMMUNO_HOOK
+          - project: backend
+            hook: RENDER_DEPLOY_API_COMMUNO_HOOK
     steps:
       - name: Déclencher le déploiement Render
         env:
-          # Le secret passe par une variable d'env : jamais interpolé dans la commande.
           HOOK_URL: ${{ secrets[matrix.hook] }}
-        # --fail : curl sort en erreur si Render répond 4xx/5xx
-        # --silent --show-error : pas de bruit, mais l'erreur reste visible
         run: curl --fail --silent --show-error -X POST "$HOOK_URL"

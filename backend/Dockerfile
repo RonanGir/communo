@@ -1,27 +1,38 @@
-# ---------- Stage 1 : build ----------
-FROM maven:3-eclipse-temurin-25-alpine AS build
+# ---------- Stage 1 : Build Frontend (Angular) ----------
+FROM node:22-alpine AS frontend-build
+
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# ---------- Stage 2 : Build Backend (Spring Boot) ----------
+FROM maven:3-eclipse-temurin-25-alpine AS backend-build
 
 WORKDIR /communo_backend
 
-# 1) Ce qui change rarement -> cache conservé
-COPY mvnw .
-COPY .mvn ./.mvn
-COPY pom.xml .
+# 1) Dépendances Maven (cache conservé)
+COPY backend/mvnw .
+COPY backend/.mvn ./.mvn
+COPY backend/pom.xml .
 RUN ./mvnw dependency:go-offline -B
 
-# 2) Ce qui change souvent
-COPY src ./src
+# 2) Code source backend + injection des fichiers statiques Angular
+COPY backend/src ./src
+COPY --from=frontend-build /app/frontend/dist/frontend/browser ./src/main/resources/static
+
 RUN ./mvnw package -DskipTests
 
-# ---------- Stage 2 : runtime ----------
+# ---------- Stage 3 : Runtime ----------
 FROM bellsoft/liberica-openjre-alpine:25-cds
 
 WORKDIR /communo_backend
 
-# utilisateur non-root : à créer ici (addgroup / adduser sous Alpine)
 RUN addgroup -S communo_group && adduser -S communo_user -G communo_group
 
-COPY --from=build --chown=communo_user:communo_group /communo_backend/target/*.jar backend.jar
+COPY --from=backend-build --chown=communo_user:communo_group /communo_backend/target/*.jar backend.jar
 USER communo_user
 
 ENV JAVA_TOOL_OPTIONS="\

@@ -7,3 +7,7 @@ mise.toml
 .env.*
 .env.dev
 !.env.example
+**/node_modules
+**/dist
+**/target
+.github
