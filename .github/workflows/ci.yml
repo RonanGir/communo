@@ -12,70 +12,87 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: build (${{ matrix.project }})
+  frontend:
+    name: frontend (build + test)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [ backend, frontend ]
     defaults:
       run:
-        working-directory: ./${{ matrix.project }}
+        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v7
-      - if: matrix.project == 'frontend'
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: npm-
       - uses: jdx/mise-action@v5
         with:
-          working_directory: ./${{ matrix.project }}
+          working_directory: ./frontend
       - run: mise run build
+      # Le résultat du build est transmis au job package (les jobs ne partagent pas de disque).
+      # Chemin par défaut Angular : dist/<nom du projet>/browser (à vérifier au premier run).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-browser
+          path: frontend/dist/frontend/browser
+          if-no-files-found: error
+          retention-days: 1
+      - run: mise run test:unit-test
 
-  test:
-    name: test (${{ matrix.project }})
+  backend-test:
+    name: backend (test)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [ backend, frontend ]
     defaults:
       run:
-        working-directory: ./${{ matrix.project }}
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v7
-      - if: matrix.project == 'frontend'
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: npm-
       - uses: jdx/mise-action@v5
         with:
-          working_directory: ./${{ matrix.project }}
+          working_directory: ./backend
+      # Sans le front : les tests n'ont pas besoin de static/
       - run: mise run test:unit-test
+
+  package:
+    name: backend (package avec front)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ frontend, backend-test ]
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          working_directory: ./backend
+      # Vide static/ : download-artifact n'efface rien, les anciens fichiers à hash resteraient dans le jar
+      - name: Vider static/
+        run: rm -rf src/main/resources/static && mkdir -p src/main/resources/static
+      # Copie du front dans static/ AVANT le package Maven, sinon le jar ne l'embarque pas.
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-browser
+          path: backend/src/main/resources/static
+      # Tâche mise "build" = ./mvnw clean install -DskipTests (tests déjà joués par backend-test)
+      - run: mise run build
 
   deploy:
     name: deploy (${{ matrix.project }})
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [ build, test ]
+    needs: [ package ]
     #if: startsWith(github.ref, 'refs/tags/')
     if: github.ref == 'refs/heads/main'
     environment: Communo_production
     strategy:
       matrix:
-        project: [ backend, frontend ]
+        project: [ backend ]
         include:
             - project: backend
               hook: RENDER_DEPLOY_API_COMMUNO_HOOK
-            - project: frontend
-              hook: RENDER_DEPLOY_UI_COMMUNO_HOOK
     steps:
       - name: Déclencher le déploiement Render
         env:

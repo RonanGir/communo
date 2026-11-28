@@ -36,4 +36,8 @@ build/
 mise.local.toml
 .mvn*
 
-.env.dev
+.env*
+!.env.example
+
+# Build Angular copié par la CI (généré)
+src/main/resources/static/
