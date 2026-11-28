@@ -1,0 +1,78 @@
+/* Thème Communo : beige clair par défaut. Toutes les couleurs passent par ces variables. */
+:root {
+  --bg-from: #fbf3e6;
+  --bg-mid: #f1e2cc;
+  --bg-to: #e6d1b3;
+  --glow: rgba(224, 122, 56, 0.12);
+  --text: #3b2a1e;
+  --text-muted: #6b523f;
+  --card-bg: rgba(255, 252, 245, 0.65);
+  --card-border: rgba(120, 80, 45, 0.18);
+  --card-shadow: 0 20px 50px rgba(120, 80, 45, 0.18);
+  --accent: #e07a38;
+  --accent-soft: #e8a87c;
+  --accent-deep: #c9733a;
+  --accent-text: #9a4a17;
+  --accent-bg: rgba(224, 122, 56, 0.14);
+  --accent-border: rgba(201, 115, 58, 0.45);
+  --title-from: #7a4a2a;
+  --title-to: #d1651f;
+  --btn-from: #d9822b;
+  --btn-to: #a4501f;
+  --btn-text: #fff;
+  --btn-shadow: rgba(217, 130, 43, 0.45);
+  --focus-ring: #7a4a2a;
+  --progress-track: rgba(120, 80, 45, 0.15);
+  --progress-a: #e07a38;
+  --progress-b: #f3d9b8;
+  --status-unknown: orange;
+  --status-up: #22c55e;
+  --status-down: #ef4444;
+}
+
+/* Thème sombre, activable avec <html data-theme="dark"> */
+html[data-theme="dark"] {
+  /* Fond */
+  --bg-from: #2a2826;
+  --bg-mid: #1f1e1c;
+  --bg-to: #161514;
+  --glow: rgba(224, 122, 56, 0.10);
+
+  /* Texte */
+  --text: #f5ebe0;
+  --text-muted: #d9c5b2;
+
+  /* Carte */
+  --card-bg: rgba(245, 225, 200, 0.07);
+  --card-border: rgba(245, 225, 200, 0.16);
+  --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  /* Accents */
+  --accent: #e07a38;
+  --accent-soft: #e8a87c;
+  --accent-deep: #c9733a;
+  --accent-text: #f2b27a;
+  --accent-bg: rgba(224, 122, 56, 0.16);
+  --accent-border: rgba(224, 122, 56, 0.4);
+
+  /* Titre */
+  --title-from: #f5deb3;
+  --title-to: #e07a38;
+
+  /* Bouton */
+  --btn-from: #d9822b;
+  --btn-to: #a4501f;
+  --btn-text: #fff;
+  --btn-shadow: rgba(217, 130, 43, 0.45);
+  --focus-ring: #fff;
+
+  /* Barre de progression */
+  --progress-track: rgba(245, 225, 200, 0.12);
+  --progress-a: #e07a38;
+  --progress-b: #34302c;
+
+  /* Healthcheck */
+  --status-unknown: orange;
+  --status-up: #22c55e;
+  --status-down: #ef4444;
+}
